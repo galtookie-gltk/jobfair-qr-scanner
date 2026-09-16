@@ -47,7 +47,11 @@
       background: #1a73e8;
       color: white;
     }
-
+#checkInBtn {
+  display: none;
+  background: #1a73e8;
+  color: white;
+}
     #againBtn {
       display: none;
       background: #188038;
@@ -107,7 +111,9 @@
   </div>
 
   <div id="error"></div>
-
+<button id="checkInBtn" onclick="proceedToCheckIn()">
+  PROCEED TO CHECK-IN
+</button>
   <button id="againBtn" onclick="scanAgain()">
     Scan Another
   </button>
@@ -119,6 +125,7 @@
 
 let scanner = null;
 let scanned = false;
+let scannedRegistrationId = "";
 
 
 async function startScanner() {
@@ -154,11 +161,14 @@ async function startScanner() {
         }
       },
 
-      async (decodedText) => {
+     async (decodedText) => {
 
-        if (scanned) return;
+  if (scanned) return;
 
-        scanned = true;
+  scanned = true;
+
+  scannedRegistrationId =
+    String(decodedText || "").trim();
 
         status.textContent = "QR code detected.";
 
@@ -171,8 +181,12 @@ async function startScanner() {
         document.getElementById("qrText").textContent =
           decodedText;
 
-        result.style.display = "block";
-        againBtn.style.display = "block";
+      result.style.display = "block";
+
+document.getElementById("checkInBtn").style.display =
+  "block";
+
+againBtn.style.display = "block";
 
         status.textContent = "Scan complete.";
 
@@ -229,7 +243,22 @@ async function startScanner() {
   }
 }
 
+function proceedToCheckIn() {
 
+  if (!scannedRegistrationId) {
+    return;
+  }
+
+  const CHECKIN_WEB_APP_URL =
+    "https://script.google.com/a/macros/gingoog.gov.ph/s/AKfycbx7Rnbq9L354cBazX1Hc4Pmc-BKGvCYAGbxkHMGxvN6aM4PC3c5vMR8Rw_94Pg3kTV1/exec";
+
+  const destination =
+    CHECKIN_WEB_APP_URL +
+    "?id=" +
+    encodeURIComponent(scannedRegistrationId);
+
+  window.location.href = destination;
+}
 function scanAgain() {
 
   document.getElementById("reader").innerHTML = "";
@@ -249,8 +278,12 @@ function scanAgain() {
   document.getElementById("status").textContent =
     "Ready to scan.";
 
-  scanner = null;
-  scanned = false;
+scanner = null;
+scanned = false;
+scannedRegistrationId = "";
+
+document.getElementById("checkInBtn").style.display =
+  "none";
 }
 
 </script>
