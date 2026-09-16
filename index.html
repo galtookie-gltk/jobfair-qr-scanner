@@ -2,14 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Job Fair QR Scanner</title>
 
+  <!-- QR Scanner Library -->
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
+
     body {
       font-family: Arial, sans-serif;
       background: #f5f5f5;
@@ -25,6 +30,10 @@
       padding: 25px;
       border-radius: 14px;
       box-shadow: 0 2px 10px rgba(0,0,0,.1);
+    }
+
+    h2 {
+      margin-top: 0;
     }
 
     #reader {
@@ -47,11 +56,13 @@
       background: #1a73e8;
       color: white;
     }
-#checkInBtn {
-  display: none;
-  background: #1a73e8;
-  color: white;
-}
+
+    #checkInBtn {
+      display: none;
+      background: #1a73e8;
+      color: white;
+    }
+
     #againBtn {
       display: none;
       background: #188038;
@@ -67,7 +78,7 @@
     }
 
     #qrText {
-      font-size: 24px;
+      font-size: 28px;
       font-weight: bold;
       word-break: break-word;
       margin-top: 10px;
@@ -86,8 +97,10 @@
       margin-top: 15px;
       color: #555;
     }
+
   </style>
 </head>
+
 
 <body>
 
@@ -95,27 +108,52 @@
 
   <h2>Job Fair QR Scanner</h2>
 
-  <p>Tap the button to scan an applicant's QR code.</p>
+  <p>
+    Tap the button to scan an applicant's QR code.
+  </p>
 
-  <button id="startBtn" onclick="startScanner()">
-    Start QR Scanner
+
+  <button
+    id="startBtn"
+    onclick="startScanner()"
+  >
+    START QR SCANNER
   </button>
+
 
   <div id="status"></div>
 
+
   <div id="reader"></div>
 
+
   <div id="result">
-    <strong>QR CODE RESULT</strong>
+
+    <strong>
+      REGISTRATION ID
+    </strong>
+
     <div id="qrText"></div>
+
   </div>
 
+
   <div id="error"></div>
-<button id="checkInBtn" onclick="proceedToCheckIn()">
-  PROCEED TO CHECK-IN
-</button>
-  <button id="againBtn" onclick="scanAgain()">
-    Scan Another
+
+
+  <button
+    id="checkInBtn"
+    onclick="proceedToCheckIn()"
+  >
+    PROCEED TO CHECK-IN
+  </button>
+
+
+  <button
+    id="againBtn"
+    onclick="scanAgain()"
+  >
+    SCAN ANOTHER
   </button>
 
 </div>
@@ -123,98 +161,284 @@
 
 <script>
 
+
+// =====================================================
+// IMPORTANT
+// Paste the URL of your APPS SCRIPT TEST COPY below.
+// It should end in /exec
+// =====================================================
+
+const CHECKIN_WEB_APP_URL =
+  "https://script.google.com/a/macros/gingoog.gov.ph/s/AKfycbx7Rnbq9L354cBazX1Hc4Pmc-BKGvCYAGbxkHMGxvN6aM4PC3c5vMR8Rw_94Pg3kTV1/exec";
+
+
+// =====================================================
+// VARIABLES
+// =====================================================
+
 let scanner = null;
+
 let scanned = false;
+
 let scannedRegistrationId = "";
 
 
+// =====================================================
+// START QR SCANNER
+// =====================================================
+
 async function startScanner() {
 
-  const startBtn = document.getElementById("startBtn");
-  const againBtn = document.getElementById("againBtn");
-  const status = document.getElementById("status");
-  const errorBox = document.getElementById("error");
-  const result = document.getElementById("result");
+  const startBtn =
+    document.getElementById("startBtn");
+
+  const checkInBtn =
+    document.getElementById("checkInBtn");
+
+  const againBtn =
+    document.getElementById("againBtn");
+
+  const status =
+    document.getElementById("status");
+
+  const errorBox =
+    document.getElementById("error");
+
+  const result =
+    document.getElementById("result");
+
+
+  // Reset screen
 
   startBtn.style.display = "none";
+
+  checkInBtn.style.display = "none";
+
   againBtn.style.display = "none";
+
   errorBox.style.display = "none";
+
   result.style.display = "none";
 
-  status.textContent = "Requesting camera access...";
+  status.textContent =
+    "Requesting camera access...";
+
 
   scanned = false;
 
+  scannedRegistrationId = "";
+
+
   try {
 
-    scanner = new Html5Qrcode("reader");
+    scanner =
+      new Html5Qrcode("reader");
+
 
     await scanner.start(
 
-      { facingMode: "environment" },
+      // Prefer rear camera
+      {
+        facingMode: "environment"
+      },
 
+
+      // Scanner settings
       {
         fps: 10,
+
         qrbox: {
           width: 250,
           height: 250
         }
       },
 
-     async (decodedText) => {
 
-  if (scanned) return;
+      // =================================================
+      // QR SUCCESS
+      // =================================================
 
-  scanned = true;
+      async (decodedText) => {
 
-  scannedRegistrationId =
-    String(decodedText || "").trim();
-
-        status.textContent = "QR code detected.";
-
-        try {
-          await scanner.stop();
-        } catch(e) {
-          console.log(e);
+        if (scanned) {
+          return;
         }
 
-        document.getElementById("qrText").textContent =
-          decodedText;
 
-      result.style.display = "block";
+        scanned = true;
 
-document.getElementById("checkInBtn").style.display =
-  "block";
 
-againBtn.style.display = "block";
+        status.textContent =
+          "QR code detected.";
 
-        status.textContent = "Scan complete.";
+
+        // Stop camera immediately
+
+        try {
+
+          await scanner.stop();
+
+        } catch (e) {
+
+          console.log(
+            "Camera stop error:",
+            e
+          );
+
+        }
+
+
+        // =================================================
+        // READ FULL QR CONTENT
+        // =================================================
+
+        const qrContent =
+          String(
+            decodedText || ""
+          ).trim();
+
+
+        // =================================================
+        // EXTRACT REGISTRATION ID
+        //
+        // Example:
+        //
+        // PEIS APPLICANT
+        // Registration ID: P2600480
+        // Name: Jasmin Ubalde
+        //
+        // becomes:
+        //
+        // P2600480
+        // =================================================
+
+        const idMatch =
+          qrContent.match(
+            /\bP\d+\b/i
+          );
+
+
+        if (idMatch) {
+
+          scannedRegistrationId =
+            idMatch[0]
+              .toUpperCase();
+
+        } else {
+
+          scannedRegistrationId = "";
+
+        }
+
+
+        // =================================================
+        // VALID REGISTRATION ID FOUND
+        // =================================================
+
+        if (scannedRegistrationId) {
+
+          document
+            .getElementById("qrText")
+            .textContent =
+              scannedRegistrationId;
+
+
+          result.style.display =
+            "block";
+
+
+          checkInBtn.style.display =
+            "block";
+
+
+          againBtn.style.display =
+            "block";
+
+
+          status.textContent =
+            "Scan complete.";
+
+        }
+
+
+        // =================================================
+        // REGISTRATION ID NOT FOUND IN QR
+        // =================================================
+
+        else {
+
+          document
+            .getElementById("qrText")
+            .textContent =
+              "Registration ID not detected.";
+
+
+          result.style.display =
+            "block";
+
+
+          checkInBtn.style.display =
+            "none";
+
+
+          againBtn.style.display =
+            "block";
+
+
+          status.textContent =
+            "QR scanned, but no Registration ID was detected.";
+
+        }
 
       },
 
+
+      // =================================================
+      // NORMAL SCANNER MISSES
+      // =================================================
+
       (scanError) => {
-        // Ignore normal scan misses
+
+        // Do nothing.
+        // The scanner continuously checks frames
+        // until it finds a QR code.
+
       }
 
     );
 
+
     status.textContent =
-      "Camera active — point it at the QR code.";
+      "Camera active — point it at the applicant's QR code.";
+
 
   }
 
-  catch(err) {
+
+  // =====================================================
+  // CAMERA ERROR
+  // =====================================================
+
+  catch (err) {
 
     console.error(err);
 
+
     status.textContent = "";
+
 
     let message =
       "Camera could not be started.";
 
+
     if (
+
       err.name === "NotAllowedError" ||
-      String(err).toLowerCase().includes("permission")
+
+      String(err)
+        .toLowerCase()
+        .includes("permission")
+
     ) {
 
       message =
@@ -222,69 +446,162 @@ againBtn.style.display = "block";
 
     }
 
-    else if (err.name === "NotFoundError") {
+
+    else if (
+      err.name === "NotFoundError"
+    ) {
 
       message =
         "No camera was found on this device.";
 
     }
 
-    else if (err.name === "NotReadableError") {
+
+    else if (
+      err.name === "NotReadableError"
+    ) {
 
       message =
         "The camera may be in use by another app. Close other camera apps and try again.";
 
     }
 
-    errorBox.textContent = message;
-    errorBox.style.display = "block";
 
-    startBtn.style.display = "block";
+    errorBox.textContent =
+      message;
+
+
+    errorBox.style.display =
+      "block";
+
+
+    startBtn.style.display =
+      "block";
+
   }
+
 }
+
+
+// =====================================================
+// PROCEED TO APPS SCRIPT CHECK-IN
+// =====================================================
 
 function proceedToCheckIn() {
 
+
   if (!scannedRegistrationId) {
+
+    document
+      .getElementById("error")
+      .textContent =
+        "No Registration ID was detected.";
+
+    document
+      .getElementById("error")
+      .style.display =
+        "block";
+
     return;
+
   }
 
-  const CHECKIN_WEB_APP_URL =
-    "https://script.google.com/a/macros/gingoog.gov.ph/s/AKfycbx7Rnbq9L354cBazX1Hc4Pmc-BKGvCYAGbxkHMGxvN6aM4PC3c5vMR8Rw_94Pg3kTV1/exec";
+
+  if (
+    !CHECKIN_WEB_APP_URL ||
+    CHECKIN_WEB_APP_URL.includes(
+      "PASTE-YOUR"
+    )
+  ) {
+
+    document
+      .getElementById("error")
+      .textContent =
+        "The check-in web app URL has not been configured.";
+
+    document
+      .getElementById("error")
+      .style.display =
+        "block";
+
+    return;
+
+  }
+
 
   const destination =
-    CHECKIN_WEB_APP_URL +
-    "?id=" +
-    encodeURIComponent(scannedRegistrationId);
 
-  window.location.href = destination;
+    CHECKIN_WEB_APP_URL +
+
+    "?id=" +
+
+    encodeURIComponent(
+      scannedRegistrationId
+    );
+
+
+  window.location.href =
+    destination;
+
 }
+
+
+// =====================================================
+// SCAN ANOTHER
+// =====================================================
+
 function scanAgain() {
 
-  document.getElementById("reader").innerHTML = "";
 
-  document.getElementById("result").style.display =
-    "none";
+  document
+    .getElementById("reader")
+    .innerHTML = "";
 
-  document.getElementById("error").style.display =
-    "none";
 
-  document.getElementById("againBtn").style.display =
-    "none";
+  document
+    .getElementById("result")
+    .style.display =
+      "none";
 
-  document.getElementById("startBtn").style.display =
-    "block";
 
-  document.getElementById("status").textContent =
-    "Ready to scan.";
+  document
+    .getElementById("error")
+    .style.display =
+      "none";
 
-scanner = null;
-scanned = false;
-scannedRegistrationId = "";
 
-document.getElementById("checkInBtn").style.display =
-  "none";
+  document
+    .getElementById("checkInBtn")
+    .style.display =
+      "none";
+
+
+  document
+    .getElementById("againBtn")
+    .style.display =
+      "none";
+
+
+  document
+    .getElementById("startBtn")
+    .style.display =
+      "block";
+
+
+  document
+    .getElementById("status")
+    .textContent =
+      "Ready to scan another applicant.";
+
+
+  scanner = null;
+
+  scanned = false;
+
+  scannedRegistrationId = "";
+
 }
+
 
 </script>
 
