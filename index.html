@@ -7,85 +7,74 @@
 
   <title>Job Fair QR Scanner</title>
 
-  <!-- QR Scanner Library -->
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
-      margin: 0;
-      padding: 20px;
       font-family: Arial, sans-serif;
       background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
       text-align: center;
     }
 
-    .container {
+    .box {
       max-width: 500px;
       margin: 30px auto;
-      padding: 24px;
       background: white;
+      padding: 25px;
       border-radius: 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.10);
-    }
-
-    h2 {
-      margin-top: 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,.1);
     }
 
     #reader {
       width: 100%;
       margin-top: 20px;
-      overflow: hidden;
-      border-radius: 10px;
     }
 
     button {
       width: 100%;
-      padding: 16px;
-      margin-top: 15px;
-      border: none;
+      padding: 15px;
+      border: 0;
       border-radius: 8px;
       font-size: 17px;
       font-weight: bold;
+      margin-top: 15px;
       cursor: pointer;
     }
 
-    #startButton {
+    #startBtn {
       background: #1a73e8;
       color: white;
     }
 
-    #scanAnotherButton {
+    #againBtn {
       display: none;
       background: #188038;
       color: white;
     }
 
-    #resultBox {
+    #result {
       display: none;
-      margin-top: 20px;
-      padding: 20px;
       background: #e6f4ea;
-      border-radius: 10px;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 8px;
     }
 
-    #resultText {
-      margin-top: 10px;
-      font-size: 26px;
+    #qrText {
+      font-size: 24px;
       font-weight: bold;
       word-break: break-word;
+      margin-top: 10px;
     }
 
-    #errorBox {
+    #error {
       display: none;
-      margin-top: 20px;
-      padding: 15px;
       background: #fce8e6;
       color: #b3261e;
+      padding: 15px;
+      margin-top: 20px;
       border-radius: 8px;
     }
 
@@ -98,16 +87,13 @@
 
 <body>
 
-<div class="container">
+<div class="box">
 
   <h2>Job Fair QR Scanner</h2>
 
-  <p>
-    Tap the button below, then point the rear camera
-    at the applicant's QR code.
-  </p>
+  <p>Tap the button to scan an applicant's QR code.</p>
 
-  <button id="startButton" onclick="startScanner()">
+  <button id="startBtn" onclick="startScanner()">
     Start QR Scanner
   </button>
 
@@ -115,231 +101,157 @@
 
   <div id="reader"></div>
 
-  <div id="resultBox">
-    <strong>Registration ID</strong>
-    <div id="resultText"></div>
+  <div id="result">
+    <strong>QR CODE RESULT</strong>
+    <div id="qrText"></div>
   </div>
 
-  <div id="errorBox"></div>
+  <div id="error"></div>
 
-  <button id="scanAnotherButton" onclick="scanAnother()">
+  <button id="againBtn" onclick="scanAgain()">
     Scan Another
   </button>
 
 </div>
 
+
 <script>
 
-  let scanner = null;
-  let scanComplete = false;
+let scanner = null;
+let scanned = false;
 
-  async function startScanner() {
 
-    const startButton =
-      document.getElementById("startButton");
+async function startScanner() {
 
-    const scanAnotherButton =
-      document.getElementById("scanAnotherButton");
+  const startBtn = document.getElementById("startBtn");
+  const againBtn = document.getElementById("againBtn");
+  const status = document.getElementById("status");
+  const errorBox = document.getElementById("error");
+  const result = document.getElementById("result");
 
-    const resultBox =
-      document.getElementById("resultBox");
+  startBtn.style.display = "none";
+  againBtn.style.display = "none";
+  errorBox.style.display = "none";
+  result.style.display = "none";
 
-    const errorBox =
-      document.getElementById("errorBox");
+  status.textContent = "Requesting camera access...";
 
-    const status =
-      document.getElementById("status");
+  scanned = false;
 
-    startButton.style.display = "none";
-    scanAnotherButton.style.display = "none";
-    resultBox.style.display = "none";
-    errorBox.style.display = "none";
+  try {
+
+    scanner = new Html5Qrcode("reader");
+
+    await scanner.start(
+
+      { facingMode: "environment" },
+
+      {
+        fps: 10,
+        qrbox: {
+          width: 250,
+          height: 250
+        }
+      },
+
+      async (decodedText) => {
+
+        if (scanned) return;
+
+        scanned = true;
+
+        status.textContent = "QR code detected.";
+
+        try {
+          await scanner.stop();
+        } catch(e) {
+          console.log(e);
+        }
+
+        document.getElementById("qrText").textContent =
+          decodedText;
+
+        result.style.display = "block";
+        againBtn.style.display = "block";
+
+        status.textContent = "Scan complete.";
+
+      },
+
+      (scanError) => {
+        // Ignore normal scan misses
+      }
+
+    );
 
     status.textContent =
-      "Requesting camera permission...";
+      "Camera active — point it at the QR code.";
 
-    scanComplete = false;
-
-    try {
-
-      scanner = new Html5Qrcode("reader");
-
-      await scanner.start(
-
-        {
-          facingMode: "environment"
-        },
-
-        {
-          fps: 10,
-
-          qrbox: function(width, height) {
-
-            const size =
-              Math.floor(Math.min(width, height) * 0.7);
-
-            return {
-              width: size,
-              height: size
-            };
-          }
-        },
-
-        async function(decodedText) {
-
-          if (scanComplete) {
-            return;
-          }
-
-          scanComplete = true;
-
-          status.textContent =
-            "QR code detected.";
-
-          try {
-            await scanner.stop();
-          }
-          catch (error) {
-            console.log(error);
-          }
-
-          document.getElementById(
-            "resultText"
-          ).textContent = decodedText;
-
-          resultBox.style.display =
-            "block";
-
-          scanAnotherButton.style.display =
-            "block";
-
-          status.textContent =
-            "Scan complete.";
-
-        },
-
-        function(scanError) {
-          // Normal while searching for QR code.
-        }
-
-      );
-
-      status.textContent =
-        "Camera active — point it at the QR code.";
-
-    }
-
-    catch (error) {
-
-      console.error(error);
-
-      status.textContent = "";
-
-      startButton.style.display =
-        "block";
-
-      let message =
-        "The camera could not be started.";
-
-      const errorName =
-        error && error.name
-          ? error.name
-          : "";
-
-      const errorText =
-        String(error).toLowerCase();
-
-      if (
-        errorName === "NotAllowedError" ||
-        errorText.includes("permission") ||
-        errorText.includes("denied") ||
-        errorText.includes("notallowed")
-      ) {
-
-        message =
-          "Camera permission was denied. Please allow camera access in Chrome and try again.";
-
-      }
-
-      else if (
-        errorName === "NotFoundError"
-      ) {
-
-        message =
-          "No camera was found on this device.";
-
-      }
-
-      else if (
-        errorName === "NotReadableError"
-      ) {
-
-        message =
-          "The camera may be in use by another app. Close other camera apps and try again.";
-
-      }
-
-      errorBox.textContent =
-        message;
-
-      errorBox.style.display =
-        "block";
-    }
   }
 
+  catch(err) {
 
-  async function scanAnother() {
+    console.error(err);
 
-    if (scanner) {
+    status.textContent = "";
 
-      try {
+    let message =
+      "Camera could not be started.";
 
-        const state =
-          scanner.getState();
+    if (
+      err.name === "NotAllowedError" ||
+      String(err).toLowerCase().includes("permission")
+    ) {
 
-        if (
-          state === Html5QrcodeScannerState.SCANNING ||
-          state === Html5QrcodeScannerState.PAUSED
-        ) {
+      message =
+        "Camera permission was denied. Please allow camera access and try again.";
 
-          await scanner.stop();
-
-        }
-
-      }
-      catch (error) {
-        console.log(error);
-      }
     }
 
-    document.getElementById(
-      "reader"
-    ).innerHTML = "";
+    else if (err.name === "NotFoundError") {
 
-    scanner = null;
-    scanComplete = false;
+      message =
+        "No camera was found on this device.";
 
-    document.getElementById(
-      "resultBox"
-    ).style.display = "none";
+    }
 
-    document.getElementById(
-      "errorBox"
-    ).style.display = "none";
+    else if (err.name === "NotReadableError") {
 
-    document.getElementById(
-      "scanAnotherButton"
-    ).style.display = "none";
+      message =
+        "The camera may be in use by another app. Close other camera apps and try again.";
 
-    document.getElementById(
-      "status"
-    ).textContent =
-      "Ready to scan another QR code.";
+    }
 
-    document.getElementById(
-      "startButton"
-    ).style.display = "block";
+    errorBox.textContent = message;
+    errorBox.style.display = "block";
+
+    startBtn.style.display = "block";
   }
+}
+
+
+function scanAgain() {
+
+  document.getElementById("reader").innerHTML = "";
+
+  document.getElementById("result").style.display =
+    "none";
+
+  document.getElementById("error").style.display =
+    "none";
+
+  document.getElementById("againBtn").style.display =
+    "none";
+
+  document.getElementById("startBtn").style.display =
+    "block";
+
+  document.getElementById("status").textContent =
+    "Ready to scan.";
+
+  scanner = null;
+  scanned = false;
+}
 
 </script>
 
